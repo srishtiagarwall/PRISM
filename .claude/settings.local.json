@@ -4,7 +4,8 @@
       "Bash(npm --version)",
       "Bash(npm install *)",
       "Bash(npm test *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Skill(claude-api)"
     ]
   }
 }
