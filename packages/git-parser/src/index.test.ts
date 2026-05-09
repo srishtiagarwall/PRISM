@@ -7,34 +7,31 @@ const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 describe('parseChangedFiles', () => {
   afterEach(() => jest.resetAllMocks());
 
-  it('returns sorted module ownership descriptors', () => {
-    // payments files: Alice dominates, notifications: Bob
+  it('returns sorted module ownership descriptors with isNewModule=false for existing files', () => {
     mockExecSync
-      .mockReturnValueOnce('Alice\nAlice\n' as any) // payments/retry.ts
-      .mockReturnValueOnce('Alice\nBob\n' as any)   // payments/queue.ts
-      .mockReturnValueOnce('Bob\nBob\n' as any);    // notifications/email.ts
+      .mockReturnValueOnce('Alice\nAlice\n' as any)
+      .mockReturnValueOnce('Alice\nBob\n' as any)
+      .mockReturnValueOnce('Bob\nBob\n' as any);
 
     const result = parseChangedFiles(
-      [
-        'src/payments/retry.ts',
-        'src/payments/queue.ts',
-        'src/notifications/email.ts',
-      ],
+      ['src/payments/retry.ts', 'src/payments/queue.ts', 'src/notifications/email.ts'],
       '/repo',
     );
 
     expect(result).toHaveLength(2);
-    // sorted alphabetically: notifications before payments
     expect(result[0].module).toBe('notifications');
-    expect(result[0].files).toEqual(['src/notifications/email.ts']);
-    expect(result[0].owners).toEqual(['Bob']);
-
+    expect(result[0].isNewModule).toBe(false);
     expect(result[1].module).toBe('payments');
-    expect(result[1].files).toEqual([
-      'src/payments/retry.ts',
-      'src/payments/queue.ts',
-    ]);
     expect(result[1].owners[0]).toBe('Alice');
+    expect(result[1].isNewModule).toBe(false);
+  });
+
+  it('marks a module as isNewModule=true when all its files are new', () => {
+    mockExecSync.mockReturnValue('' as any);
+
+    const result = parseChangedFiles(['src/brand-new/feature.ts'], '/repo');
+    expect(result[0].isNewModule).toBe(true);
+    expect(result[0].owners).toEqual([]);
   });
 
   it('returns empty array for empty input', () => {

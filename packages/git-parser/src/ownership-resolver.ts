@@ -1,58 +1,88 @@
 import { execSync } from 'child_process';
-import * as path from 'path';
 import type { GitLogEntry } from './types';
 
+export interface FileOwnerResult {
+  owners: string[];
+  /** Explicitly true when git ran successfully but returned no commits (new/untracked file). */
+  hasNoHistory: boolean;
+}
+
 /**
- * Returns the top N contributors for a file by commit count, using git log --follow
- * to track renames. Falls back to an empty array if git is unavailable or the file
- * has no history (e.g. brand-new file not yet committed).
+ * Returns top-N contributors for a file using git log --follow.
+ *
+ * Distinguishes two empty-owner cases:
+ *   hasNoHistory=true  → git succeeded, file has zero commits (new file in PR)
+ *   hasNoHistory=false + owners=[] → git itself failed (not a repo, binary, etc.)
  */
 export function getFileOwners(
   filePath: string,
   repoRoot: string,
   topN = 2,
-): string[] {
+): FileOwnerResult {
+  let output: string;
   try {
-    const output = execSync(
+    output = execSync(
       `git log --follow --format="%aN" -- "${filePath}"`,
       { cwd: repoRoot, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] },
     );
-
-    const counts = new Map<string, number>();
-    for (const line of output.split('\n')) {
-      const name = line.trim();
-      if (!name) continue;
-      counts.set(name, (counts.get(name) ?? 0) + 1);
-    }
-
-    return [...counts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, topN)
-      .map(([author]) => author);
   } catch {
-    return [];
+    return { owners: [], hasNoHistory: false };
   }
+
+  const counts = new Map<string, number>();
+  for (const line of output.split('\n')) {
+    const name = line.trim();
+    if (!name) continue;
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+
+  if (counts.size === 0) {
+    // git ran fine but the file has no commits — explicitly a new file
+    return { owners: [], hasNoHistory: true };
+  }
+
+  const owners = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([author]) => author);
+
+  return { owners, hasNoHistory: false };
+}
+
+export interface ModuleOwnerResult {
+  owners: string[];
+  /** True when every file in the module has no git history. */
+  isNewModule: boolean;
 }
 
 /**
- * Aggregates owners across all files in a module, ranking by total commit count.
+ * Aggregates owners across all files in a module.
+ * isNewModule=true only when ALL files returned hasNoHistory=true.
  */
 export function resolveModuleOwners(
   files: string[],
   repoRoot: string,
   topN = 2,
-): string[] {
+): ModuleOwnerResult {
   const counts = new Map<string, number>();
+  let newFileCount = 0;
 
   for (const file of files) {
-    const owners = getFileOwners(file, repoRoot);
-    for (const owner of owners) {
+    const result = getFileOwners(file, repoRoot, topN);
+    if (result.hasNoHistory) {
+      newFileCount++;
+    }
+    for (const owner of result.owners) {
       counts.set(owner, (counts.get(owner) ?? 0) + 1);
     }
   }
 
-  return [...counts.entries()]
+  const isNewModule = newFileCount === files.length;
+
+  const owners = [...counts.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, topN)
     .map(([author]) => author);
+
+  return { owners, isNewModule };
 }

@@ -18,8 +18,8 @@ export function parseChangedFiles(
   const result: ModuleOwnership[] = [];
 
   for (const [module, files] of grouped.entries()) {
-    const owners = resolveModuleOwners(files, repoRoot);
-    result.push({ module, files, owners });
+    const { owners, isNewModule } = resolveModuleOwners(files, repoRoot);
+    result.push({ module, files, owners, isNewModule });
   }
 
   return result.sort((a, b) => a.module.localeCompare(b.module));
