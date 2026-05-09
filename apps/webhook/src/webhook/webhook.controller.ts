@@ -6,11 +6,10 @@ import {
   HttpCode,
   BadRequestException,
   Logger,
+  Inject,
 } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { createHmac, timingSafeEqual } from 'crypto';
-import { PR_ANALYSIS_QUEUE } from './webhook.module';
 
 interface GitHubPRPayload {
   action: string;
@@ -32,7 +31,7 @@ export class WebhookController {
   private readonly logger = new Logger(WebhookController.name);
 
   constructor(
-    @InjectQueue(PR_ANALYSIS_QUEUE) private readonly queue: Queue,
+    @Inject('ANALYSIS_QUEUE') private readonly queue: Queue,
   ) {}
 
   @Post('github')

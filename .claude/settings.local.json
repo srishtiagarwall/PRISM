@@ -5,7 +5,14 @@
       "Bash(npm install *)",
       "Bash(npm test *)",
       "Bash(npx tsc *)",
-      "Skill(claude-api)"
+      "Skill(claude-api)",
+      "Bash(npx ts-node *)",
+      "Bash(node *)",
+      "Bash(npx kill-port *)",
+      "Bash(netstat -ano)",
+      "Bash(awk '{print $5}')",
+      "Bash(xargs -I{} taskkill //PID {} //F)",
+      "WebSearch"
     ]
   }
 }
