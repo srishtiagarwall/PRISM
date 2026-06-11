@@ -6,3 +6,4 @@ dist/
 .env.local
 coverage/
 plan.md
+prism-git-bot.2026-05-09.private-key.pem

@@ -12,7 +12,8 @@
       "Bash(netstat -ano)",
       "Bash(awk '{print $5}')",
       "Bash(xargs -I{} taskkill //PID {} //F)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git *)"
     ]
   }
 }
