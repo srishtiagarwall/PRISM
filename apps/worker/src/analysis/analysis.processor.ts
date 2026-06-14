@@ -61,11 +61,11 @@ export class AnalysisProcessor implements OnModuleInit {
       );
 
       const prFiles = await fetchPRFiles(token, owner, repo, prNumber);
-      const changedPaths = prFiles.map((f) => f.filename);
+      const changedPaths = prFiles.map((f: any) => f.filename);
 
       const fileContentMap: FileContentMap = new Map();
-      for (const f of prFiles) {
-        if ((f as any).patch) {
+      for (const f of prFiles as any[]) {
+        if (f.patch) {
           const addedLines = f.patch
             .split('\n')
             .filter((line: string) => line.startsWith('+') && !line.startsWith('+++'))
