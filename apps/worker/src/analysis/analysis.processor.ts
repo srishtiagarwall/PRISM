@@ -65,7 +65,7 @@ export class AnalysisProcessor implements OnModuleInit {
 
       const fileContentMap: FileContentMap = new Map();
       for (const f of prFiles) {
-        if (f.patch) {
+        if ((f as any).patch) {
           const addedLines = f.patch
             .split('\n')
             .filter((line: string) => line.startsWith('+') && !line.startsWith('+++'))
