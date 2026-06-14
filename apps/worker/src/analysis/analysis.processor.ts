@@ -23,9 +23,24 @@ export class AnalysisProcessor implements OnModuleInit {
   constructor(@Inject('ANALYSIS_QUEUE_NAME') private readonly queueName: string) {}
 
   onModuleInit() {
-    this.queue = new Bull<PRJob>(this.queueName, {
-      redis: process.env.REDIS_URL ?? 'redis://localhost:6379',
-    });
+    const redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6379';
+    let bullOpts: Bull.QueueOptions;
+    if (redisUrl.startsWith('rediss://')) {
+      const url = new URL(redisUrl);
+      bullOpts = {
+        redis: {
+          host: url.hostname,
+          port: Number(url.port) || 6380,
+          username: url.username || undefined,
+          password: url.password || undefined,
+          tls: {},
+          maxRetriesPerRequest: null,
+        } as any,
+      };
+    } else {
+      bullOpts = { redis: redisUrl };
+    }
+    this.queue = new Bull<PRJob>(this.queueName, bullOpts);
 
     this.queue.process('analyse-pr', async (job) => {
       await this.handleAnalysePR(job.data);

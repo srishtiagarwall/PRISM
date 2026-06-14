@@ -1,30 +1,30 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { buildPrompt } from './prompt';
 import type { AgentInput } from './types';
 
 export type { AgentInput } from './types';
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'gemini-2.5-flash';
 
-/**
- * Single LangGraph-style node: takes parsed PR context, returns a markdown
- * context card string. Calls Claude once with a structured prompt — no
- * multi-step flow needed for Phase 1.
- */
 export async function generateContextCard(input: AgentInput): Promise<string> {
-  const client = new Anthropic();
-  const prompt = buildPrompt(input);
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY is not set');
 
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 1024,
-    messages: [{ role: 'user', content: prompt }],
+  const prompt = buildPrompt(input);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
   });
 
-  const textBlock = response.content.find((b) => b.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') {
-    throw new Error('Agent returned no text content');
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gemini API error ${res.status}: ${err}`);
   }
 
-  return textBlock.text.trim();
+  const data = await res.json() as any;
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Gemini returned no text content');
+  return text.trim();
 }

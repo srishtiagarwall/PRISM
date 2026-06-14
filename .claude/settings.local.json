@@ -13,7 +13,8 @@
       "Bash(awk '{print $5}')",
       "Bash(xargs -I{} taskkill //PID {} //F)",
       "WebSearch",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(nslookup *)"
     ]
   }
 }
