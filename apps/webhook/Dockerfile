@@ -4,5 +4,5 @@ COPY package*.json ./
 COPY packages/ ./packages/
 COPY apps/webhook/ ./apps/webhook/
 RUN npm install --workspaces
-RUN npm run build -w @prism/webhook
+RUN npm run build --workspaces --if-present
 CMD ["node", "apps/webhook/dist/main.js"]
