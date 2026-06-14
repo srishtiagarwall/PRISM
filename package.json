@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w @prism/git-parser -w @prism/dep-mapper -w @prism/github-client -w @prism/agent && npm run build -w @prism/webhook -w @prism/worker",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
   },
